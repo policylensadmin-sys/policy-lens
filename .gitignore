@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build output
+dist/
+**/dist/
+build/
+*.tsbuildinfo
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+
+# Supabase credentials
+*.credentials.json
+service-account*.json
+
+# Test / coverage
+coverage/
+**/coverage/
+.vitest/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+
+# Local Postgres data (docker volume)
+.pgdata/

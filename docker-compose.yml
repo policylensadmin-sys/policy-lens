@@ -1,0 +1,30 @@
+# Local Postgres + pgvector for PolicyLens development.
+# Brings up a Postgres instance with the pgvector extension available so
+# migrations (001_extensions.sql: `create extension vector`) succeed locally
+# without a hosted Supabase project.
+#
+# Usage:
+#   docker compose up -d
+#   # connection string: postgres://postgres:postgres@localhost:5432/policylens
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: policylens-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: policylens
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d policylens']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
