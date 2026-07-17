@@ -8,7 +8,6 @@
 
 import { pathToFileURL } from 'node:url';
 
-import cors from 'cors';
 import express, { type Application, type Request, type Response } from 'express';
 
 import { assertConfig, config } from './config/index';
@@ -24,12 +23,20 @@ import { startWorker } from './worker/worker';
 export function createApp(): Application {
   const app = express();
 
-  app.use(
-    cors({
-      origin: config.clientOrigin,
-      credentials: true,
-    }),
-  );
+  // Manual CORS — handles preflight (OPTIONS) explicitly so Railway's proxy
+  // cannot override the headers with its own values.
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+      res.status(204).end();
+      return;
+    }
+    next();
+  });
+
   app.use(express.json({ limit: '2mb' }));
 
   const api = express.Router();
@@ -91,9 +98,12 @@ export function startServer(): ReturnType<Application['listen']> {
   // queue. In production it runs by default; locally it stays off so a separate
   // `npm run worker` can be used. Force with RUN_WORKER=inline, disable with
   // RUN_WORKER=off.
+  // Run the worker in-process by default (single-service hosting like Railway),
+  // unless explicitly disabled with RUN_WORKER=off or running under tests. This
+  // no longer depends on NODE_ENV so uploads are processed even if NODE_ENV is
+  // not set to "production" on the host.
   const runWorker =
-    process.env.RUN_WORKER === 'inline' ||
-    (config.nodeEnv === 'production' && process.env.RUN_WORKER !== 'off');
+    process.env.RUN_WORKER !== 'off' && config.nodeEnv !== 'test';
   if (runWorker) {
     startWorker();
     // eslint-disable-next-line no-console
