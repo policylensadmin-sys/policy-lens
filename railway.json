@@ -3,7 +3,7 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "npm run start:prod -w @policylens/backend",
+    "startCommand": "node --import tsx backend/src/index.ts",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }
