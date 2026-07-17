@@ -1,6 +1,8 @@
 {
   "build": {
-    "builder": "NIXPACKS"
+    "builder": "NIXPACKS",
+    "installCommand": "npm ci",
+    "buildCommand": "echo done"
   },
   "deploy": {
     "startCommand": "node --import tsx backend/src/index.ts",
