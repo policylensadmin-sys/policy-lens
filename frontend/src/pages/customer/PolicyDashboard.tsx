@@ -1,56 +1,71 @@
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { Policy, PolicyAnalysis } from '@policylens/shared';
+import type { Exclusion, Recommendation, WaitingPeriod } from '@policylens/shared';
 import { api } from '../../lib/api';
 import { HealthScoreGauge } from '../../components/HealthScoreGauge';
 import { RiskFlagCard } from '../../components/RiskFlagCard';
-import { ClauseCard } from '../../components/ClauseCard';
-import { CoverageList } from '../../components/CoverageList';
 import { ExclusionsSummary } from '../../components/ExclusionsSummary';
-import { WaitingPeriodList } from '../../components/WaitingPeriodList';
 import { RecommendationList } from '../../components/RecommendationList';
 
 /**
  * Policy Dashboard (R4).
  *
- * Fetches the dashboard payload from `GET /api/policies/:id` and renders a
- * visual summary of the analysed policy:
- * - Header: provider name, premium amount, sum insured (R4.1).
- * - Above the fold: {@link RiskFlagCard} risk-flag count (R4.2, R4.5) and the
- *   {@link HealthScoreGauge} numeric score + quality band (R4.3).
- * - Coverage summary, exclusions summary, and waiting periods grouped by
- *   duration (R4.1).
- * - Flagged clauses in plain English (R4.1 risk flags).
- * - Up to 5 AI recommendations labelled gap vs risk, with a no-recommendations
- *   state (R4.4, R4.6).
+ * Consumes the flat dashboard payload returned by `GET /api/policies/:id`
+ * (see backend PolicyService.getDashboard): policy headline fields plus derived
+ * view-model fields (healthScore, coverageSummary, exclusionSummary,
+ * waitingPeriodsByDuration, recommendations, riskFlagCount).
  */
 
-/** Dashboard payload returned by `GET /policies/:id` (design: API Design). */
-interface PolicyDashboardPayload {
-  policy: Policy;
-  analysis: PolicyAnalysis | null;
+/** Matches the backend PolicyService.getDashboard payload. */
+interface DashboardPayload {
+  policy: {
+    id: string;
+    category: string;
+    title: string;
+    provider: string | null;
+    premiumAmount: number | null;
+    premiumCurrency: string | null;
+    sumInsured: number | null;
+    originalFilename: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  analyzed: boolean;
+  healthScore: number | null;
+  qualityBand: string | null;
+  coverageSummary: string[];
+  exclusionSummary: { count: number; top: Exclusion[] };
+  riskFlagCount: number;
+  waitingPeriodsByDuration: Record<string, WaitingPeriod[]>;
+  recommendations: Recommendation[];
+  noRiskFlags: boolean;
+  noRecommendations: boolean;
+  partial: boolean;
+  notFound: string[];
 }
 
-/** Format a monetary amount in the policy's currency. */
-function formatMoney(amount: number, currency: string): string {
+/** Format a monetary amount, tolerating null/unknown currency. */
+function formatMoney(amount: number | null, currency: string | null): string {
+  if (amount === null || amount === undefined) return '—';
+  const cur = currency || 'INR';
   try {
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
-      currency,
+      currency: cur,
       maximumFractionDigits: 0,
     }).format(amount);
   } catch {
-    // Unknown currency code — fall back to a plain number with the code.
-    return `${currency} ${amount.toLocaleString()}`;
+    return `${cur} ${amount.toLocaleString()}`;
   }
 }
 
 export function PolicyDashboard() {
   const { id } = useParams<{ id: string }>();
 
-  const { data, isLoading, error } = useQuery<PolicyDashboardPayload>({
+  const { data, isLoading, error } = useQuery<DashboardPayload>({
     queryKey: ['policy', id],
-    queryFn: () => api.get<PolicyDashboardPayload>(`/policies/${id}`),
+    queryFn: () => api.get<DashboardPayload>(`/policies/${id}`),
     enabled: Boolean(id),
   });
 
@@ -61,7 +76,7 @@ export function PolicyDashboard() {
         className="mx-auto flex max-w-4xl items-center gap-3 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted"
       >
         <span
-          className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"
+          className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-primary"
           aria-hidden
         />
         Loading your policy dashboard…
@@ -79,7 +94,7 @@ export function PolicyDashboard() {
           </p>
           <Link
             to="/app/vault"
-            className="mt-4 inline-block rounded-md border border-border px-4 py-2 text-sm text-foreground transition hover:border-accent"
+            className="mt-4 inline-block rounded-md border border-border px-4 py-2 text-sm text-foreground transition hover:border-primary"
           >
             Back to vault
           </Link>
@@ -88,24 +103,35 @@ export function PolicyDashboard() {
     );
   }
 
-  const { policy, analysis } = data;
+  const { policy } = data;
 
-  // Analysis not yet available (policy still processing / failed).
-  if (!analysis) {
+  // Analysis not yet available (still processing / failed).
+  if (!data.analyzed) {
     return (
       <div className="mx-auto max-w-4xl">
         <div className="rounded-xl border border-border bg-surface p-6 text-center">
-          <h1 className="font-display text-xl text-foreground">{policy.title || policy.provider}</h1>
+          <h1 className="font-display text-xl text-foreground">
+            {policy.title || policy.provider || 'Policy'}
+          </h1>
           <p className="mt-2 text-sm text-muted">
             This policy hasn&apos;t finished analysis yet. Check back once processing completes.
           </p>
+          <Link
+            to="/app/vault"
+            className="mt-4 inline-block rounded-md border border-border px-4 py-2 text-sm text-foreground transition hover:border-primary"
+          >
+            Back to vault
+          </Link>
         </div>
       </div>
     );
   }
 
-  const healthScore = analysis.healthScore ?? 0;
-  const riskFlagCount = analysis.riskFlagCount ?? analysis.hiddenClauses.length;
+  const healthScore = data.healthScore ?? 0;
+  const coverage = data.coverageSummary ?? [];
+  const exclusions = data.exclusionSummary?.top ?? [];
+  const waitingGroups = Object.entries(data.waitingPeriodsByDuration ?? {});
+  const recommendations = data.recommendations ?? [];
 
   return (
     <section className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -113,10 +139,10 @@ export function PolicyDashboard() {
       <header className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h1 className="font-display text-2xl text-foreground">
-            {policy.title || `${policy.provider} policy`}
+            {policy.title || `${policy.provider ?? 'Policy'}`}
           </h1>
-          <p className="text-sm text-muted">{policy.provider}</p>
-          {analysis.partial && (
+          {policy.provider && <p className="text-sm text-muted">{policy.provider}</p>}
+          {data.partial && (
             <p className="text-xs text-amber-400">
               Partial analysis — some sections of this policy could not be fully analysed.
             </p>
@@ -126,35 +152,35 @@ export function PolicyDashboard() {
           <div>
             <dt className="text-xs uppercase tracking-wide text-muted">Premium</dt>
             <dd className="font-display text-lg text-foreground">
-              {formatMoney(analysis.premium.amount, analysis.premium.currency)}
+              {formatMoney(policy.premiumAmount, policy.premiumCurrency)}
             </dd>
           </div>
           <div>
             <dt className="text-xs uppercase tracking-wide text-muted">Sum insured</dt>
             <dd className="font-display text-lg text-foreground">
-              {formatMoney(analysis.sumInsured, analysis.premium.currency)}
+              {formatMoney(policy.sumInsured, policy.premiumCurrency)}
             </dd>
           </div>
         </dl>
       </header>
 
-      {/* Quick links to related policy tools (R4.1) */}
+      {/* Quick links to related policy tools */}
       <nav aria-label="Policy tools" className="flex flex-wrap gap-3">
         <Link
           to={`/app/policy/${policy.id}/chat`}
-          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-accent hover:text-accent"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-primary hover:text-primary"
         >
           Ask about this policy
         </Link>
         <Link
           to="/app/compare"
-          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-accent hover:text-accent"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-primary hover:text-primary"
         >
           Compare policies
         </Link>
         <Link
           to="/app/claim-sim"
-          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-accent hover:text-accent"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm text-foreground transition hover:border-primary hover:text-primary"
         >
           Claim simulator
         </Link>
@@ -163,7 +189,7 @@ export function PolicyDashboard() {
       {/* Above the fold: risk flags (R4.2/R4.5) + health score gauge (R4.3) */}
       <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
         <div className="flex flex-col justify-center">
-          <RiskFlagCard count={riskFlagCount} />
+          <RiskFlagCard count={data.riskFlagCount ?? 0} />
         </div>
         <HealthScoreGauge score={healthScore} />
       </div>
@@ -171,30 +197,51 @@ export function PolicyDashboard() {
       {/* Coverage / exclusions / waiting periods (R4.1) */}
       <div className="grid gap-6 lg:grid-cols-3">
         <DashboardPanel title="Coverage">
-          <CoverageList coverage={analysis.coverage} />
+          {coverage.length > 0 ? (
+            <ul className="flex flex-wrap gap-2">
+              {coverage.map((type) => (
+                <li
+                  key={type}
+                  className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                >
+                  {type}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">No covered categories were identified.</p>
+          )}
         </DashboardPanel>
+
         <DashboardPanel title="Exclusions">
-          <ExclusionsSummary exclusions={analysis.exclusions} />
+          <ExclusionsSummary exclusions={exclusions} />
         </DashboardPanel>
+
         <DashboardPanel title="Waiting periods">
-          <WaitingPeriodList waitingPeriods={analysis.waitingPeriods} />
+          {waitingGroups.length > 0 ? (
+            <ul className="flex flex-col gap-3">
+              {waitingGroups.map(([duration, periods]) => (
+                <li key={duration}>
+                  <p className="text-sm font-medium text-foreground">{duration}</p>
+                  <ul className="mt-1 flex flex-col gap-1">
+                    {periods.map((wp, i) => (
+                      <li key={`${wp.appliesTo}-${i}`} className="text-xs text-muted">
+                        {wp.appliesTo}
+                      </li>
+                    ))}
+                  </ul>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">No waiting periods were identified.</p>
+          )}
         </DashboardPanel>
       </div>
 
-      {/* Flagged clauses in plain English (R4.1 risk flags) */}
-      {analysis.hiddenClauses.length > 0 && (
-        <DashboardPanel title="Flagged clauses">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {analysis.hiddenClauses.map((clause, index) => (
-              <ClauseCard key={`${clause.clause}-${index}`} clause={clause} />
-            ))}
-          </div>
-        </DashboardPanel>
-      )}
-
       {/* Up to 5 AI recommendations, gap vs risk (R4.4/R4.6) */}
       <DashboardPanel title="Recommendations">
-        <RecommendationList recommendations={analysis.recommendations} />
+        <RecommendationList recommendations={recommendations} />
       </DashboardPanel>
     </section>
   );
@@ -205,7 +252,6 @@ interface DashboardPanelProps {
   children: React.ReactNode;
 }
 
-/** A titled surface panel used to group dashboard sections. */
 function DashboardPanel({ title, children }: DashboardPanelProps) {
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5">
