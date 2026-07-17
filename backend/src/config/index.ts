@@ -104,7 +104,6 @@ export function validateConfig(cfg: ServerConfig): string[] {
     ['url', 'SUPABASE_URL'],
     ['anonKey', 'SUPABASE_ANON_KEY'],
     ['serviceRoleKey', 'SUPABASE_SERVICE_ROLE_KEY'],
-    ['jwtSecret', 'SUPABASE_JWT_SECRET'],
   ];
 
   const missing = requiredSupabase.filter(([key]) => !cfg.supabase[key]).map(([, name]) => name);
