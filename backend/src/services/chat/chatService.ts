@@ -308,12 +308,80 @@ export class ChatService {
     }
 
     const rows = (data ?? []) as MatchChunkRow[];
-    return rows.map((row) => ({
+    const vectorMatches = rows.map((row) => ({
       chunkIndex: row.chunk_index,
       content: row.content,
       section: row.section ?? null,
       page: row.page ?? null,
       similarity: row.similarity,
+    }));
+
+    // Vector retrieval requires real embeddings. When embeddings run on the
+    // deterministic mock (free mode), cosine similarity is effectively random
+    // and nothing clears the threshold — so fall back to a free keyword-overlap
+    // search over the policy's chunks. This keeps chat/search grounded with zero
+    // external cost.
+    if (vectorMatches.length > 0) return vectorMatches;
+    return this.keywordRetrieve(policyId, text, topK);
+  }
+
+  /**
+   * Free lexical fallback: rank the policy's chunks by how many of the query's
+   * keywords they contain. Returns up to `topK` chunks with a synthetic
+   * similarity derived from the keyword-overlap ratio.
+   */
+  private async keywordRetrieve(
+    policyId: string,
+    text: string,
+    topK: number,
+  ): Promise<ChunkContext[]> {
+    const { data, error } = await this.db()
+      .from('policy_chunks')
+      .select('chunk_index, content, section, page')
+      .eq('policy_id', policyId)
+      .limit(500);
+
+    if (error) {
+      throw AppError.internal('Failed to search policy content', { reason: error.message });
+    }
+
+    const rows = (data ?? []) as Array<{
+      chunk_index: number;
+      content: string;
+      section: string | null;
+      page: number | null;
+    }>;
+    if (rows.length === 0) return [];
+
+    const keywords = extractKeywords(text);
+    if (keywords.length === 0) {
+      return rows.slice(0, topK).map((r) => ({
+        chunkIndex: r.chunk_index,
+        content: r.content,
+        section: r.section ?? null,
+        page: r.page ?? null,
+        similarity: 0.72,
+      }));
+    }
+
+    const scored = rows.map((r) => {
+      const haystack = r.content.toLowerCase();
+      let hits = 0;
+      for (const kw of keywords) if (haystack.includes(kw)) hits += 1;
+      return { r, ratio: hits / keywords.length };
+    });
+
+    scored.sort((a, b) => b.ratio - a.ratio);
+
+    const top = scored.filter((s) => s.ratio > 0).slice(0, topK);
+    const chosen = top.length > 0 ? top : scored.slice(0, Math.min(topK, 3));
+
+    return chosen.map(({ r, ratio }) => ({
+      chunkIndex: r.chunk_index,
+      content: r.content,
+      section: r.section ?? null,
+      page: r.page ?? null,
+      similarity: Math.min(0.95, 0.6 + ratio * 0.35),
     }));
   }
 
@@ -485,4 +553,26 @@ function deriveTitle(question: string): string {
 /** Clamp a number into the [0, 1] range. */
 function clamp01(n: number): number {
   return Math.max(0, Math.min(1, n));
+}
+
+/** Common English stopwords ignored during keyword extraction. */
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'do', 'does',
+  'did', 'to', 'of', 'in', 'on', 'for', 'and', 'or', 'my', 'me', 'i', 'you', 'your',
+  'this', 'that', 'it', 'its', 'as', 'at', 'by', 'with', 'from', 'about', 'what',
+  'which', 'who', 'whom', 'how', 'when', 'where', 'why', 'can', 'could', 'would',
+  'should', 'will', 'shall', 'may', 'might', 'have', 'has', 'had', 'if', 'then',
+  'so', 'not', 'no', 'yes', 'any', 'all', 'am', 'covered', 'cover', 'policy',
+]);
+
+/**
+ * Extract meaningful keywords from a query: lowercase, split on non-word chars,
+ * drop stopwords and very short tokens, and de-duplicate.
+ */
+function extractKeywords(text: string): string[] {
+  const tokens = text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 2 && !STOPWORDS.has(t));
+  return Array.from(new Set(tokens));
 }
