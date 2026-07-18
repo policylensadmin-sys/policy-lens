@@ -1,7 +1,18 @@
 import { useRef, useState, type ChangeEvent } from 'react';
 import { Link } from 'react-router-dom';
-import type { PolicyAnalysis } from '@policylens/shared';
+import type { Exclusion, HiddenClause } from '@policylens/shared';
 import { api, ApiClientError } from '../../lib/api';
+
+/** Trimmed guest-preview payload returned by POST /try/analyze. */
+interface GuestPreview {
+  preview: true;
+  healthScore: number | null;
+  riskFlagCount: number;
+  provider: string;
+  topExclusions: Exclusion[];
+  riskFlags: HiddenClause[];
+  partial: boolean;
+}
 
 /**
  * Guest single-policy preview (R17.3, R20.7).
@@ -31,7 +42,7 @@ export function Try() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
-  const [analysis, setAnalysis] = useState<PolicyAnalysis | null>(null);
+  const [analysis, setAnalysis] = useState<GuestPreview | null>(null);
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -61,7 +72,7 @@ export function Try() {
       const formData = new FormData();
       formData.append('file', file);
       // Public endpoint — send without a bearer token.
-      const result = await api.post<PolicyAnalysis>('/try/analyze', formData, { auth: false });
+      const result = await api.post<GuestPreview>('/try/analyze', formData, { auth: false });
       setAnalysis(result);
       setStatus('done');
     } catch (err) {
@@ -128,10 +139,11 @@ export function Try() {
 }
 
 /** Simplified read-only preview of a guest analysis with a sign-up prompt. */
-function PreviewResult({ analysis, onReset }: { analysis: PolicyAnalysis; onReset: () => void }) {
+function PreviewResult({ analysis, onReset }: { analysis: GuestPreview; onReset: () => void }) {
   const score = analysis.healthScore ?? 0;
-  const riskFlags = analysis.hiddenClauses.slice(0, 3);
-  const exclusions = analysis.exclusions.slice(0, 3);
+  const riskFlags = analysis.riskFlags ?? [];
+  const exclusions = analysis.topExclusions ?? [];
+  const riskFlagCount = analysis.riskFlagCount ?? riskFlags.length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -149,7 +161,7 @@ function PreviewResult({ analysis, onReset }: { analysis: PolicyAnalysis; onRese
       {/* Risk flags preview */}
       <div className="rounded-xl border border-border bg-surface p-6">
         <h2 className="mb-3 font-display text-lg text-foreground">
-          {analysis.hiddenClauses.length} risk flag{analysis.hiddenClauses.length === 1 ? '' : 's'} found
+          {riskFlagCount} risk flag{riskFlagCount === 1 ? '' : 's'} found
         </h2>
         {riskFlags.length > 0 ? (
           <ul className="space-y-3">
