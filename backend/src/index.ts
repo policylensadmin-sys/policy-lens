@@ -15,6 +15,7 @@ import { errorHandler, notFound } from './middleware/index';
 import { brokerRouter } from './routes/broker';
 import { customerRouter } from './routes/customer';
 import { meRouter } from './routes/me';
+import { notificationsRouter } from './routes/notifications';
 import { publicRouter } from './routes/public';
 import { createAiProviders } from './services/ai/index';
 import { startWorker } from './worker/worker';
@@ -57,6 +58,11 @@ export function createApp(): Application {
   // Current-user profile (any authenticated role). Mounted before the
   // role-gated routers so it is not restricted by RBAC.
   api.use(meRouter);
+
+  // In-app notifications (any authenticated role) — auth only, no RBAC.
+  // Mounted BEFORE the customer router so the customer portal's router-level
+  // RBAC guard cannot intercept these shared (customer + broker) routes.
+  api.use('/notifications', notificationsRouter);
 
   // Broker portal routes, mounted under `/broker` and BEFORE the customer
   // router. The customer router applies `rbacMiddleware('customer')` at the

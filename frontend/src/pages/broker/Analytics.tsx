@@ -118,6 +118,7 @@ export function Analytics() {
               No policies to analyze yet.
             </p>
           ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
@@ -144,6 +145,7 @@ export function Analytics() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </section>
 

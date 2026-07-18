@@ -1,7 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { Logo } from '../components/Brand';
-import { Logo } from '../components/Brand';
+import { NotificationBell } from '../components/NotificationBell';
 
 /**
  * Customer portal shell (teal brand accent, R20.5).
@@ -39,6 +39,7 @@ export function CustomerLayout() {
               {link.label}
             </NavLink>
           ))}
+          <NotificationBell />
           <ThemeToggle />
         </nav>
       </header>

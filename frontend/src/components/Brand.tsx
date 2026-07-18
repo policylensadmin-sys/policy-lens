@@ -7,26 +7,32 @@
 type MarkProps = { className?: string };
 
 /**
- * PolicyLens logo mark: a magnifying lens reading a document — the product's
- * core idea (we read the fine print). Uses the brand `primary` color.
+ * PolicyLens logo mark: a teal rounded-square badge holding a white magnifying
+ * lens over a document — the product's core idea (we read the fine print).
+ *
+ * The mark uses a fixed teal→emerald gradient (not theme tokens) so the brand
+ * looks identical on the customer dark theme, the broker navy sidebar, and the
+ * favicon. Size it with `className` (e.g. "h-8 w-8").
  */
 export function LensMark({ className = '' }: MarkProps) {
   return (
-    <svg viewBox="0 0 40 40" fill="none" className={className} aria-hidden>
+    <svg viewBox="0 0 40 40" fill="none" className={className} role="img" aria-label="PolicyLens">
       <defs>
-        <linearGradient id="pl-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
-          <stop stopColor="currentColor" className="text-primary" />
-          <stop offset="1" stopColor="currentColor" className="text-primary/60" />
+        <linearGradient id="pl-badge" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#818CF8" />
+          <stop offset="1" stopColor="#4F46E5" />
         </linearGradient>
       </defs>
-      {/* rounded document */}
-      <rect x="6" y="4" width="21" height="28" rx="4" className="fill-primary/15 stroke-primary" strokeWidth="2" />
-      <path d="M11 12h10M11 17h10M11 22h6" className="stroke-primary" strokeWidth="2" strokeLinecap="round" />
-      {/* magnifying lens */}
-      <circle cx="26" cy="25" r="8.5" fill="url(#pl-grad)" className="opacity-90" />
-      <circle cx="26" cy="25" r="8.5" className="stroke-primary" strokeWidth="2" fill="none" />
-      <circle cx="26" cy="25" r="3.4" className="fill-surface" />
-      <path d="M32.5 31.5l4 4" className="stroke-primary" strokeWidth="3" strokeLinecap="round" />
+      {/* Teal badge */}
+      <rect width="40" height="40" rx="10" fill="url(#pl-badge)" />
+      {/* Document peeking behind the lens */}
+      <rect x="10" y="8.5" width="14" height="19" rx="2.5" fill="#FFFFFF" opacity="0.28" />
+      <path d="M13.5 14h7M13.5 18h7M13.5 22h4" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+      {/* Magnifying lens */}
+      <circle cx="24" cy="23" r="7.5" fill="#0B1220" fillOpacity="0.18" />
+      <circle cx="24" cy="23" r="7.5" stroke="#FFFFFF" strokeWidth="2.6" fill="none" />
+      <circle cx="24" cy="23" r="2.6" fill="#FFFFFF" />
+      <path d="M29.6 28.6l4 4" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" />
     </svg>
   );
 }
@@ -36,6 +42,12 @@ interface LogoProps {
   showWord?: boolean;
   /** Tailwind height class for the mark, e.g. "h-8 w-8". */
   markClassName?: string;
+  /**
+   * Wordmark color treatment:
+   *  - `auto` (default): theme foreground + teal accent (light backgrounds).
+   *  - `light`: white text for dark/navy backgrounds (e.g. broker sidebar).
+   */
+  tone?: 'auto' | 'light';
   className?: string;
 }
 
@@ -43,14 +55,18 @@ interface LogoProps {
 export function Logo({
   showWord = true,
   markClassName = 'h-8 w-8',
+  tone = 'auto',
   className = '',
 }: LogoProps) {
+  const wordClass =
+    tone === 'light' ? 'text-white' : 'text-foreground';
+  const accentClass = tone === 'light' ? 'text-[#818CF8]' : 'text-primary';
   return (
     <span className={`inline-flex items-center gap-2 ${className}`}>
-      <LensMark className={`${markClassName} text-primary`} />
+      <LensMark className={markClassName} />
       {showWord && (
-        <span className="font-display text-xl font-extrabold tracking-tight text-foreground">
-          Policy<span className="text-primary">Lens</span>
+        <span className={`font-display text-xl font-extrabold tracking-tight ${wordClass}`}>
+          Policy<span className={accentClass}>Lens</span>
         </span>
       )}
     </span>

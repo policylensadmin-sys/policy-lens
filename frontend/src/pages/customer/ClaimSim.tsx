@@ -36,7 +36,7 @@ export function ClaimSim() {
   const [policyId, setPolicyId] = useState('');
   const [scenario, setScenario] = useState('');
 
-  const { data } = useQuery<VaultListResponse>({
+  const { data, isLoading, error, refetch } = useQuery<VaultListResponse>({
     queryKey: ['policies', { q: '', category: '' }],
     queryFn: () => api.get<VaultListResponse>('/policies'),
   });
@@ -56,6 +56,43 @@ export function ClaimSim() {
     event.preventDefault();
     if (!canSubmit) return;
     mutation.mutate({ policyId, scenario: trimmed });
+  }
+
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        className="mx-auto flex max-w-3xl items-center gap-3 rounded-xl border border-border bg-surface px-5 py-4 text-sm text-muted"
+      >
+        <span
+          className="h-4 w-4 animate-spin rounded-full border-2 border-border border-t-accent"
+          aria-hidden
+        />
+        Loading your policies…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <div className="rounded-xl border border-danger/40 bg-danger/10 p-6 text-center">
+          <h1 className="font-display text-lg text-foreground">
+            Couldn&apos;t load your policies
+          </h1>
+          <p role="alert" className="mt-2 text-sm text-muted">
+            We couldn&apos;t load your vault to run a simulation. Please try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="mt-4 inline-block rounded-md bg-accent px-4 py-2 text-sm font-medium text-background transition hover:brightness-110"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

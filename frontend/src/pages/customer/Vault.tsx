@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowRight, FolderOpen } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PolicyCategory } from '@policylens/shared';
 import { POLICY_CATEGORIES } from '@policylens/shared';
@@ -221,16 +222,34 @@ export function Vault() {
           We couldn&apos;t load your policies. Please refresh to try again.
         </p>
       ) : visiblePolicies.length === 0 ? (
-        <div className="rounded-xl border border-border bg-surface px-4 py-10 text-center">
-          <p className="text-sm text-foreground">
-            {hasFilters ? 'No policies match your filters' : 'Your vault is empty'}
-          </p>
-          <p className="mt-1 text-sm text-muted">
-            {hasFilters
-              ? 'Try clearing or changing the filters above.'
-              : 'Upload your first policy to get started.'}
-          </p>
-        </div>
+        hasFilters ? (
+          <div className="rounded-xl border border-border bg-surface px-4 py-10 text-center">
+            <p className="text-sm text-foreground">No policies match your filters</p>
+            <p className="mt-1 text-sm text-muted">
+              Try clearing or changing the filters above.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-surface px-6 py-14 text-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-accent">
+              <FolderOpen className="h-7 w-7" aria-hidden />
+            </span>
+            <div className="space-y-1">
+              <h2 className="font-display text-lg text-foreground">No policies yet</h2>
+              <p className="mx-auto max-w-md text-sm text-muted">
+                Upload your first policy to get a plain-English breakdown, health score,
+                and risk flags.
+              </p>
+            </div>
+            <Link
+              to="/app/upload"
+              className="inline-flex items-center gap-2 rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-background transition hover:brightness-110"
+            >
+              Analyze your first policy
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+        )
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {visiblePolicies.map((policy) => (
