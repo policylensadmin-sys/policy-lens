@@ -1,5 +1,7 @@
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { Logo } from '../components/Brand';
+import { Logo } from '../components/Brand';
 
 /**
  * Customer portal shell (teal brand accent, R20.5).
@@ -22,8 +24,8 @@ export function CustomerLayout() {
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
       <header className="flex items-center justify-between border-b border-border px-6 py-4">
-        <Link to="/app" className="font-display text-xl text-accent">
-          PolicyLens
+        <Link to="/app" aria-label="PolicyLens home">
+          <Logo />
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           {NAV_LINKS.map((link) => (

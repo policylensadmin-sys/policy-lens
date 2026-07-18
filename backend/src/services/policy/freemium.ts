@@ -101,30 +101,9 @@ export async function getTier(ownerId: string, opts?: FreemiumOptions): Promise<
  * @param ownerId owning profile id (`profiles.id`).
  * @throws {AppError} `upgrade_required` (402) when a free user is at/over the cap.
  */
-export async function assertCanUpload(ownerId: string, opts?: FreemiumOptions): Promise<void> {
-  const tier = await getTier(ownerId, opts);
-  if (tier === 'premium') return; // No tier-imposed restrictions (R18.3).
-
-  const limit = config.limits.freeTierUploadLimit;
-  const db = resolveClient(opts);
-
-  const { count, error } = await db
-    .from('policies')
-    .select('id', { count: 'exact', head: true })
-    .eq('owner_id', ownerId);
-
-  if (error) {
-    throw AppError.internal('Failed to check upload limit', { reason: error.message });
-  }
-
-  const current = count ?? 0;
-  if (current >= limit) {
-    throw upgradeRequired(
-      `You've reached the Free plan limit of ${limit} policies. ` +
-        'Upgrade to Premium to upload more policies.',
-      { feature: 'upload', tier, limit, current },
-    );
-  }
+export async function assertCanUpload(_ownerId: string, _opts?: FreemiumOptions): Promise<void> {
+  // All features are free during the trial — no upload cap is enforced.
+  return;
 }
 
 /**
@@ -139,15 +118,10 @@ export async function assertCanUpload(ownerId: string, opts?: FreemiumOptions): 
  * @throws {AppError} `upgrade_required` (402) when the caller is on the free tier.
  */
 export async function assertPremiumFeature(
-  ownerId: string,
-  feature: string,
-  opts?: FreemiumOptions,
+  _ownerId: string,
+  _feature: string,
+  _opts?: FreemiumOptions,
 ): Promise<void> {
-  const tier = await getTier(ownerId, opts);
-  if (tier === 'premium') return; // Full access (R18.3).
-
-  throw upgradeRequired(
-    `${feature} is a Premium feature. Upgrade to Premium to unlock ${feature}.`,
-    { feature, tier },
-  );
+  // All features are free during the trial — no premium gating.
+  return;
 }

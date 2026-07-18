@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ChatPanel } from '../../components/ChatPanel';
 import { SearchResults } from '../../components/SearchResults';
+import { LensSparkle } from '../../components/Brand';
 
 /**
  * Policy Chat page (R5, R15).
@@ -41,9 +42,13 @@ export function PolicyChat() {
         >
           ← Back to policy dashboard
         </Link>
-        <h1 className="font-display text-2xl text-foreground">Ask about your policy</h1>
+        <h1 className="inline-flex items-center gap-2 font-display text-2xl text-foreground">
+          <LensSparkle className="h-6 w-6" />
+          Ask Lens
+        </h1>
         <p className="text-sm text-muted">
-          Get plain-English answers grounded in your document, or search for specific clauses.
+          Lens is your AI assistant — get plain-English answers grounded in your
+          document, or search for specific clauses.
         </p>
       </header>
 

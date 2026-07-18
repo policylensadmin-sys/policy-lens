@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
+import { LensMark } from '../Brand';
 import {
   BarChart3,
   Bot,
@@ -60,9 +61,10 @@ export function Sidebar() {
       <div className="px-5 py-5">
         <Link
           to="/broker/dashboard"
-          className="font-display text-lg font-semibold text-white"
+          className="inline-flex items-center gap-2 font-display text-lg font-semibold text-white"
         >
-          PolicyLens
+          <LensMark className="h-7 w-7 text-white" />
+          Policy<span className="text-blue-400">Lens</span>
         </Link>
         <p className="mt-1 text-xs text-slate-400">Broker portal</p>
       </div>

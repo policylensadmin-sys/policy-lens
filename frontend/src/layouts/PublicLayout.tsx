@@ -1,5 +1,6 @@
 import { Link, Outlet } from 'react-router-dom';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { Logo } from '../components/Brand';
 
 /**
  * Layout for public, unauthenticated pages (Landing, Login, Signup, guest
@@ -13,8 +14,8 @@ export function PublicLayout() {
       className="flex min-h-screen flex-col bg-background text-foreground"
     >
       <header className="flex items-center justify-between px-6 py-4">
-        <Link to="/" className="font-display text-xl text-accent">
-          PolicyLens
+        <Link to="/" aria-label="PolicyLens home">
+          <Logo />
         </Link>
         <nav className="flex items-center gap-4 text-sm text-muted">
           <Link to="/login" className="hover:text-foreground">

@@ -11,10 +11,11 @@ import { Try } from './pages/public/Try';
 import { Upload } from './pages/customer/Upload';
 import { PolicyDashboard } from './pages/customer/PolicyDashboard';
 import { PolicyChat } from './pages/customer/PolicyChat';
+import { Upgrade } from './pages/customer/Upgrade';
+import { Contact } from './pages/public/Contact';
 import { Vault } from './pages/customer/Vault';
 import { Compare } from './pages/customer/Compare';
 import { ClaimSim } from './pages/customer/ClaimSim';
-import { Upgrade } from './pages/customer/Upgrade';
 import { Dashboard as BrokerDashboard } from './pages/broker/Dashboard';
 import { Claims as BrokerClaims } from './pages/broker/Claims';
 import { Leads as BrokerLeads } from './pages/broker/Leads';
@@ -54,6 +55,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/try" element={<Try />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="/not-authorized" element={<NotAuthorized />} />
         </Route>
 
