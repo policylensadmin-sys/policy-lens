@@ -52,11 +52,28 @@ export const BROKER_NAV_SECTIONS: readonly NavSection[] = [
   { to: '/broker/settings', label: 'Settings', icon: SettingsIcon },
 ] as const;
 
-export function Sidebar() {
+/** Default outer classes: the static 240px navy rail used on desktop. */
+const DEFAULT_SIDEBAR_CLASS =
+  'flex w-60 shrink-0 flex-col bg-[#1E293B] text-slate-100';
+
+interface SidebarProps {
+  /**
+   * Override the outer `<aside>` classes. Defaults to the static desktop rail.
+   * The mobile drawer passes fixed/translate positioning classes here.
+   */
+  className?: string;
+  /**
+   * Called when a nav link is activated. Used by the mobile drawer to close
+   * itself when the user taps a section.
+   */
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ className, onNavigate }: SidebarProps = {}) {
   return (
     <aside
       aria-label="Broker navigation"
-      className="flex w-60 shrink-0 flex-col bg-[#1E293B] text-slate-100"
+      className={className ?? DEFAULT_SIDEBAR_CLASS}
     >
       <div className="px-5 py-5">
         <Link to="/broker/dashboard" aria-label="PolicyLens broker home">
@@ -72,6 +89,7 @@ export function Sidebar() {
               <NavLink
                 to={section.to}
                 aria-label={section.label}
+                onClick={onNavigate}
                 className={({ isActive }) =>
                   [
                     'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',

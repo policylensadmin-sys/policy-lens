@@ -102,9 +102,9 @@ describe('api client', () => {
     });
   });
 
-  it('redirects to /login on a 401 and throws', async () => {
-    // jsdom's window.location.assign is non-configurable, so replace the whole
-    // location object with a stub for this test and restore it afterwards.
+  it('throws a typed 401 ApiClientError WITHOUT a hard redirect', async () => {
+    // The client must not force a full-page navigation on 401 (that logs users
+    // out on refresh). Auth routing is handled by AuthContext/RoleRoute instead.
     const originalLocation = window.location;
     const assign = vi.fn();
     Object.defineProperty(window, 'location', {
@@ -115,12 +115,11 @@ describe('api client', () => {
     try {
       fetchMock.mockResolvedValue(makeResponse({ status: 401, body: undefined }));
 
-      await expect(api.get('/me')).rejects.toBeInstanceOf(ApiClientError);
-      expect(assign).toHaveBeenCalledTimes(1);
-      expect(String(assign.mock.calls[0]?.[0])).toContain('/login?redirect=');
-      expect(String(assign.mock.calls[0]?.[0])).toContain(
-        encodeURIComponent('/app/vault?q=x'),
-      );
+      await expect(api.get('/me')).rejects.toMatchObject({
+        status: 401,
+        code: 'unauthorized',
+      });
+      expect(assign).not.toHaveBeenCalled();
     } finally {
       Object.defineProperty(window, 'location', {
         configurable: true,

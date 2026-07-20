@@ -56,8 +56,9 @@ import {
   getInsights,
   getReports,
 } from '../controllers/brokerInsightsController';
+import { askAssistant } from '../controllers/brokerAssistantController';
 import { getBrokerDashboard } from '../controllers/brokerDashboardController';
-import { authMiddleware, rbacMiddleware, uploadSingle } from '../middleware/index';
+import { aiRateLimiter, authMiddleware, rbacMiddleware, uploadSingle } from '../middleware/index';
 
 /** Router carrying the broker portal API surface (mounted at `/api/broker`). */
 export const brokerRouter = Router();
@@ -100,6 +101,10 @@ brokerRouter.put('/claims/:id/status', updateClaimStatus);
 brokerRouter.get('/insights', getInsights);
 brokerRouter.get('/reports', getReports);
 brokerRouter.get('/analytics', getAnalytics);
+
+// "Ask Lens" AI assistant: answers a broker's free-text question grounded in
+// their portfolio insights + summary (R13). Rate-limited like other AI routes.
+brokerRouter.post('/assistant', aiRateLimiter, askAssistant);
 
 // Leads pipeline CRUD (R19.4).
 brokerRouter.get('/leads', listLeads);

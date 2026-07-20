@@ -42,23 +42,6 @@ async function getAccessToken(): Promise<string | null> {
   return data.session?.access_token ?? null;
 }
 
-/**
- * Redirects to the login page, preserving the path the user was trying to
- * reach so they can be returned there after re-authenticating (R17.4).
- * Guards against a redirect loop when already on the login page.
- */
-function redirectToLogin(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  const { pathname, search } = window.location;
-  if (pathname === '/login') {
-    return;
-  }
-  const intended = `${pathname}${search}`;
-  window.location.assign(`/login?redirect=${encodeURIComponent(intended)}`);
-}
-
 export interface RequestOptions extends Omit<RequestInit, 'body'> {
   /**
    * Request body. Plain objects are JSON-serialised; a `FormData` instance is
@@ -98,10 +81,19 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     body: bodyInit,
   });
 
-  // 401 interceptor: expired/invalid session → send the user to login (R17.4).
+  // On 401 we throw a typed error but do NOT force a full-page redirect.
+  // A hard redirect here logs the user out on refresh, because early requests
+  // (profile probe, notification poll) can briefly 401 before the restored
+  // session token is attached. Auth routing is owned by AuthContext + RoleRoute
+  // and Supabase's auto token refresh / SIGNED_OUT events, which redirect to
+  // /login only when the session is genuinely gone (R17.4) — without wiping app
+  // state on a transient 401.
   if (response.status === 401) {
-    redirectToLogin();
-    throw new ApiClientError(401, 'unauthorized', 'Your session has expired. Please sign in again.');
+    throw new ApiClientError(
+      401,
+      'unauthorized',
+      'Your session has expired. Please sign in again.',
+    );
   }
 
   const payload = await parseBody(response);

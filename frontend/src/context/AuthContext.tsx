@@ -111,23 +111,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let active = true;
     setProfileLoading(true);
 
-    api
-      .get<Profile>('/me')
-      .then((loadedProfile) => {
+    // Fetch the profile with a couple of short retries. On a page refresh the
+    // very first request can race the restored session/token; retrying avoids
+    // spuriously dropping the user to "not authorized".
+    async function loadProfile(attempt = 0): Promise<void> {
+      try {
+        const loadedProfile = await api.get<Profile>('/me');
         if (active) {
           setProfile(loadedProfile);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setProfile(null);
-        }
-      })
-      .finally(() => {
-        if (active) {
           setProfileLoading(false);
         }
-      });
+      } catch {
+        if (!active) return;
+        if (attempt < 2) {
+          await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+          if (active) await loadProfile(attempt + 1);
+          return;
+        }
+        setProfile(null);
+        setProfileLoading(false);
+      }
+    }
+
+    void loadProfile();
 
     return () => {
       active = false;

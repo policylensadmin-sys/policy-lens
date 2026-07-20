@@ -4,6 +4,7 @@ import { INSIGHT_TYPES } from '@policylens/shared';
 import { api } from '../../lib/api';
 import { Bot } from 'lucide-react';
 import { AIInsightList } from '../../components/broker/AIInsightList';
+import { AskLens } from '../../components/broker/AskLens';
 import {
   formatTimestamp,
   humanizeKey,
@@ -76,6 +77,9 @@ export function AIAssistant() {
           AI-generated recommendations across your client portfolio.
         </p>
       </header>
+
+      {/* Interactive "Ask Lens" chat — grounded in the broker's portfolio. */}
+      <AskLens />
 
       {insightsQuery.isLoading ? (
         <div
