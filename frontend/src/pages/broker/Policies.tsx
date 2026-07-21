@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiClientError } from '../../lib/api';
 import { DataTable, type Column } from '../../components/broker/DataTable';
@@ -153,13 +154,21 @@ export function Policies() {
             Track policy status, renewals, and premiums in one place.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          className="inline-flex items-center gap-2 rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-        >
-          + Add policy
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/broker/import"
+            className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-[#2563EB] hover:text-[#2563EB]"
+          >
+            Import CSV
+          </Link>
+          <button
+            type="button"
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-md bg-[#2563EB] px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+          >
+            + Add policy
+          </button>
+        </div>
       </header>
 
       <DataTable<PolicyView>

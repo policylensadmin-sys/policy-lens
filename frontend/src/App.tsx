@@ -27,6 +27,7 @@ import { Team as BrokerTeam } from './pages/broker/Team';
 import { Settings as BrokerSettings } from './pages/broker/Settings';
 import { Clients as BrokerClients } from './pages/broker/Clients';
 import { Policies as BrokerPolicies } from './pages/broker/Policies';
+import { Import as BrokerImport } from './pages/broker/Import';
 import { Renewals as BrokerRenewals } from './pages/broker/Renewals';
 import { Premiums as BrokerPremiums } from './pages/broker/Premiums';
 import { Commission as BrokerCommission } from './pages/broker/Commission';
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="dashboard" element={<BrokerDashboard />} />
           <Route path="clients" element={<BrokerClients />} />
           <Route path="policies" element={<BrokerPolicies />} />
+          <Route path="import" element={<BrokerImport />} />
           <Route path="renewals" element={<BrokerRenewals />} />
           <Route path="premiums" element={<BrokerPremiums />} />
           <Route path="commission" element={<BrokerCommission />} />

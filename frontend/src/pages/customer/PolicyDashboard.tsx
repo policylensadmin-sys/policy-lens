@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import type { Exclusion, Recommendation, WaitingPeriod } from '@policylens/shared';
+import type { Exclusion, HiddenClause, Recommendation, WaitingPeriod } from '@policylens/shared';
 import { api } from '../../lib/api';
 import { HealthScoreGauge } from '../../components/HealthScoreGauge';
 import { RiskFlagCard } from '../../components/RiskFlagCard';
+import { RiskFlagList } from '../../components/RiskFlagList';
 import { ExclusionsSummary } from '../../components/ExclusionsSummary';
 import { RecommendationList } from '../../components/RecommendationList';
 import { AskLensLabel } from '../../components/Brand';
@@ -38,6 +39,7 @@ interface DashboardPayload {
   coverageSummary: string[];
   exclusionSummary: { count: number; top: Exclusion[] };
   riskFlagCount: number;
+  hiddenClauses: HiddenClause[];
   waitingPeriodsByDuration: Record<string, WaitingPeriod[]>;
   recommendations: Recommendation[];
   noRiskFlags: boolean;
@@ -131,6 +133,7 @@ export function PolicyDashboard() {
   const healthScore = data.healthScore ?? 0;
   const coverage = data.coverageSummary ?? [];
   const exclusions = data.exclusionSummary?.top ?? [];
+  const hiddenClauses = data.hiddenClauses ?? [];
   const waitingGroups = Object.entries(data.waitingPeriodsByDuration ?? {});
   const recommendations = data.recommendations ?? [];
 
@@ -189,8 +192,9 @@ export function PolicyDashboard() {
 
       {/* Above the fold: risk flags (R4.2/R4.5) + health score gauge (R4.3) */}
       <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
-        <div className="flex flex-col justify-center">
+        <div className="flex flex-col justify-center gap-3">
           <RiskFlagCard count={data.riskFlagCount ?? 0} />
+          {hiddenClauses.length > 0 && <RiskFlagList clauses={hiddenClauses} />}
         </div>
         <HealthScoreGauge score={healthScore} />
       </div>
@@ -203,8 +207,9 @@ export function PolicyDashboard() {
               {coverage.map((type) => (
                 <li
                   key={type}
-                  className="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                  className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"
                 >
+                  <span aria-hidden>✓</span>
                   {type}
                 </li>
               ))}

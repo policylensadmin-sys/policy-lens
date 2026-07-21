@@ -99,15 +99,19 @@ export function ClaimAssistant({
     if (trimmed.length === 0) {
       return;
     }
-    update('supportingDocuments', [...values.supportingDocuments, trimmed]);
+    // Use a functional update so rapid adds never read a stale array.
+    setValues((prev) => ({
+      ...prev,
+      supportingDocuments: [...prev.supportingDocuments, trimmed],
+    }));
     setDocDraft('');
   }
 
   function removeDocument(index: number): void {
-    update(
-      'supportingDocuments',
-      values.supportingDocuments.filter((_, i) => i !== index),
-    );
+    setValues((prev) => ({
+      ...prev,
+      supportingDocuments: prev.supportingDocuments.filter((_, i) => i !== index),
+    }));
   }
 
   function handleSubmit(): void {
@@ -305,9 +309,10 @@ export function ClaimAssistant({
                       <button
                         type="button"
                         onClick={() => removeDocument(index)}
-                        className="text-xs text-rose-600 hover:underline"
+                        aria-label={`Remove ${doc}`}
+                        className="shrink-0 rounded p-1 text-base leading-none text-rose-600 transition hover:bg-rose-100 hover:text-rose-700"
                       >
-                        Remove
+                        ×
                       </button>
                     </li>
                   ))}

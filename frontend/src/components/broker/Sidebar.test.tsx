@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { Sidebar, BROKER_NAV_SECTIONS } from './Sidebar';
 
 /**
- * Sidebar navigation (R19.1, R19.2) — verifies all 14 sections render as links
+ * Sidebar navigation (R19.1, R19.2) — verifies all 15 sections render as links
  * and the active section is highlighted.
  */
 const SECTION_LABELS = [
@@ -22,15 +22,16 @@ const SECTION_LABELS = [
   'Documents',
   'Team',
   'Settings',
+  'Import',
 ];
 
 describe('Sidebar', () => {
-  it('lists exactly the 14 required broker sections (R19.1)', () => {
-    expect(BROKER_NAV_SECTIONS).toHaveLength(14);
+  it('lists exactly the 15 required broker sections (R19.1)', () => {
+    expect(BROKER_NAV_SECTIONS).toHaveLength(15);
     expect(BROKER_NAV_SECTIONS.map((s) => s.label)).toEqual(SECTION_LABELS);
   });
 
-  it('renders all 14 sections as navigation links', () => {
+  it('renders all 15 sections as navigation links', () => {
     render(
       <MemoryRouter initialEntries={['/broker/dashboard']}>
         <Sidebar />

@@ -32,8 +32,8 @@ function selection<T extends string>(name: string, allowed: readonly T[], fallba
   return (allowed as readonly string[]).includes(raw ?? '') ? (raw as T) : fallback;
 }
 
-const AI_PROVIDER_KINDS = ['anthropic', 'openai', 'mock'] as const;
-const EMBEDDING_PROVIDER_KINDS = ['openai', 'mock'] as const;
+const AI_PROVIDER_KINDS = ['anthropic', 'openai', 'gemini', 'mock'] as const;
+const EMBEDDING_PROVIDER_KINDS = ['openai', 'gemini', 'mock'] as const;
 const OCR_PROVIDER_KINDS = ['google', 'ocrspace', 'mock'] as const;
 
 /** Provider selection + credentials read from the environment. */
@@ -48,6 +48,13 @@ export interface AiEnv {
   openaiModel?: string;
   /** Optional custom OpenAI-compatible base URL (e.g. Groq, Together, local). */
   openaiBaseUrl?: string;
+
+  /** Google Gemini (Google AI Studio) API key. */
+  geminiApiKey?: string;
+  /** Gemini chat/analysis model (default gemini-2.0-flash). */
+  geminiModel?: string;
+  /** Gemini embedding model (default gemini-embedding-001). */
+  geminiEmbeddingModel?: string;
 
   embeddingModel?: string;
   embeddingDim: number;
@@ -73,6 +80,10 @@ export function readAiEnv(): AiEnv {
     openaiApiKey: str('OPENAI_API_KEY'),
     openaiModel: str('OPENAI_MODEL'),
     openaiBaseUrl: str('OPENAI_BASE_URL'),
+
+    geminiApiKey: str('GEMINI_API_KEY'),
+    geminiModel: str('GEMINI_MODEL'),
+    geminiEmbeddingModel: str('GEMINI_EMBEDDING_MODEL'),
 
     embeddingModel: str('EMBEDDING_MODEL'),
     embeddingDim: int('EMBEDDING_DIM', 1536),

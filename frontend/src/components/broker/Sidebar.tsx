@@ -12,6 +12,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   Target,
+  UploadCloud,
   Users,
   UsersRound,
   Wallet,
@@ -21,7 +22,7 @@ import {
 /**
  * Persistent broker navigation sidebar (R19.1, R19.2, R19.3).
  *
- * Renders all 14 portal sections as {@link NavLink}s down a fixed navy rail
+ * Renders all 15 portal sections as {@link NavLink}s down a fixed navy rail
  * (`#1E293B`), each with a clean line icon (lucide). The active section is
  * highlighted via the NavLink `isActive` state (blue pill, R19.2). The broker
  * portal uses a fixed light palette with a navy sidebar regardless of the
@@ -34,7 +35,7 @@ interface NavSection {
   icon: LucideIcon;
 }
 
-/** The 14 broker portal sections, in navigation order (R19.1). */
+/** The 15 broker portal sections, in navigation order (R19.1). */
 export const BROKER_NAV_SECTIONS: readonly NavSection[] = [
   { to: '/broker/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/broker/clients', label: 'Clients', icon: Users },
@@ -50,6 +51,7 @@ export const BROKER_NAV_SECTIONS: readonly NavSection[] = [
   { to: '/broker/documents', label: 'Documents', icon: FolderOpen },
   { to: '/broker/team', label: 'Team', icon: UsersRound },
   { to: '/broker/settings', label: 'Settings', icon: SettingsIcon },
+  { to: '/broker/import', label: 'Import', icon: UploadCloud },
 ] as const;
 
 /** Default outer classes: the static 240px navy rail used on desktop. */

@@ -30,6 +30,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   Coverage,
   Exclusion,
+  HiddenClause,
   JobStage,
   JobStatus,
   PolicyCategory,
@@ -200,6 +201,8 @@ export interface PolicyDashboard {
   coverageSummary: string[];
   exclusionSummary: ExclusionSummary;
   riskFlagCount: number;
+  /** The flagged hidden clauses (clause text + risk level + plain-English impact) (R4.2). */
+  hiddenClauses: HiddenClause[];
   /** Waiting periods grouped by their stated duration (R4.1). */
   waitingPeriodsByDuration: Record<string, WaitingPeriod[]>;
   /** Up to 5 recommendations, each tagged gap vs risk (R4.4). */
@@ -412,7 +415,7 @@ export class PolicyService {
         'id, category, title, provider, premium_amount, premium_currency, sum_insured, ' +
           'family_member_id, original_filename, status, created_at, updated_at, ' +
           'policy_analysis ( health_score, risk_flag_count, coverage, exclusions, ' +
-          'waiting_periods, recommendations, not_found, partial )',
+          'hidden_clauses, waiting_periods, recommendations, not_found, partial )',
       )
       .eq('id', policyId)
       .eq('owner_id', ownerId)
@@ -610,6 +613,7 @@ interface AnalysisEmbed {
   risk_flag_count: number | null;
   coverage?: unknown;
   exclusions?: unknown;
+  hidden_clauses?: unknown;
   waiting_periods?: unknown;
   recommendations?: unknown;
   not_found?: unknown;
@@ -707,6 +711,7 @@ function toDashboard(row: PolicyWithAnalysisRow): PolicyDashboard {
 
   const coverage = toArray<Coverage>(analysis?.coverage);
   const exclusions = toArray<Exclusion>(analysis?.exclusions);
+  const hiddenClauses = toArray<HiddenClause>(analysis?.hidden_clauses);
   const waitingPeriods = toArray<WaitingPeriod>(analysis?.waiting_periods);
   const recommendations = toArray<Recommendation>(analysis?.recommendations).slice(
     0,
@@ -745,6 +750,7 @@ function toDashboard(row: PolicyWithAnalysisRow): PolicyDashboard {
       top: exclusions.slice(0, TOP_EXCLUSIONS_LIMIT),
     },
     riskFlagCount,
+    hiddenClauses,
     waitingPeriodsByDuration: groupWaitingPeriods(waitingPeriods),
     recommendations,
     // Empty-state flags only assert once analysis has completed (R4.5/R4.6).

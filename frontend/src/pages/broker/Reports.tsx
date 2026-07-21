@@ -158,7 +158,7 @@ function BreakdownList({
   const max = rows.reduce((m, r) => Math.max(m, r.value), 0);
   return (
     <div className="flex flex-col gap-2">
-      <span className="text-xs font-medium uppercase tracking-wide text-slate-400">
+      <span className="text-xs font-semibold uppercase tracking-wide text-slate-700">
         {heading}
       </span>
       <ul className="flex flex-col gap-2">

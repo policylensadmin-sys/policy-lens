@@ -57,6 +57,11 @@ import {
   getReports,
 } from '../controllers/brokerInsightsController';
 import { askAssistant } from '../controllers/brokerAssistantController';
+import {
+  commitImport,
+  downloadTemplate,
+  previewImport,
+} from '../controllers/brokerImportController';
 import { getBrokerDashboard } from '../controllers/brokerDashboardController';
 import { aiRateLimiter, authMiddleware, rbacMiddleware, uploadSingle } from '../middleware/index';
 
@@ -119,6 +124,13 @@ brokerRouter.get('/team', listTeam);
 brokerRouter.post('/team', addTeamMember);
 brokerRouter.post('/team/:id', updateTeamPermissions);
 brokerRouter.delete('/team/:id', removeTeamMember);
+
+// SAFE CSV bulk-import (clients & policies). Two-step: preview (validate, no
+// writes) → commit (server-side re-validate, then insert). A GET template route
+// serves the canonical header + example row. `:entity` ∈ {clients, policies}.
+brokerRouter.get('/import/:entity/template', downloadTemplate);
+brokerRouter.post('/import/:entity/preview', previewImport);
+brokerRouter.post('/import/:entity/commit', commitImport);
 
 // Documents: list (categorized by client/policy), upload (multipart file →
 // Supabase Storage + metadata), and delete (R19.6). The upload route runs the

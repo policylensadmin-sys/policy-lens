@@ -78,9 +78,9 @@ export interface OCRProvider {
 // ---------------------------------------------------------------------------
 
 /** Selectable AI providers (`AI_PROVIDER`). */
-export type AIProviderKind = 'anthropic' | 'openai' | 'mock';
+export type AIProviderKind = 'anthropic' | 'openai' | 'gemini' | 'mock';
 /** Selectable embedding providers (`EMBEDDING_PROVIDER`). */
-export type EmbeddingProviderKind = 'openai' | 'mock';
+export type EmbeddingProviderKind = 'openai' | 'gemini' | 'mock';
 /** Selectable OCR providers (`OCR_PROVIDER`). */
 export type OCRProviderKind = 'google' | 'ocrspace' | 'mock';
 

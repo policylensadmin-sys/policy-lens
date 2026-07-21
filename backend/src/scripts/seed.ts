@@ -27,8 +27,8 @@ import { config } from '../config/index';
 import { getSupabaseServiceRoleClient } from '../lib/supabase';
 
 // --- Demo identity ----------------------------------------------------------
-const DEMO_BROKER_EMAIL = 'demo.broker@policylens.dev';
-const DEMO_BROKER_PASSWORD = 'DemoBroker!2024';
+const DEMO_BROKER_EMAIL = 'kbdon7718@gmail.com';
+const DEMO_BROKER_PASSWORD = '123456';
 const DEMO_BROKER_NAME = 'Asha Menon';
 const DEMO_AGENCY = 'Meridian Insurance Advisors';
 
@@ -118,7 +118,18 @@ async function findUserByEmail(supabase: SupabaseClient, email: string): Promise
 async function ensureDemoBrokerUser(supabase: SupabaseClient): Promise<string> {
   const existing = await findUserByEmail(supabase, DEMO_BROKER_EMAIL);
   if (existing) {
-    console.log('  ↳ auth user already exists, reusing');
+    // Reset the password + confirm the email so the demo credentials always
+    // match (idempotent even when the auth user already exists).
+    const { error } = await supabase.auth.admin.updateUserById(existing.id, {
+      password: DEMO_BROKER_PASSWORD,
+      email_confirm: true,
+      user_metadata: { full_name: DEMO_BROKER_NAME, role: 'broker' },
+    });
+    if (error) {
+      console.warn(`  ↳ auth user exists but password reset failed: ${error.message}`);
+    } else {
+      console.log('  ↳ auth user exists — password reset + email confirmed');
+    }
     return existing.id;
   }
 

@@ -35,10 +35,15 @@ export function ExclusionsSummary({
         {top.map((exclusion, index) => (
           <li
             key={`${exclusion.name}-${index}`}
-            className="rounded-lg border border-border bg-background/40 px-3 py-2"
+            className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2"
           >
-            <p className="text-sm font-medium text-foreground">{exclusion.name}</p>
-            <p className="text-xs text-muted">{exclusion.explanation}</p>
+            <div className="flex items-start justify-between gap-2">
+              <p className="text-sm font-medium text-rose-800">{exclusion.name}</p>
+              <span className="shrink-0 rounded-full border border-rose-200 bg-rose-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-rose-700">
+                Not covered
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-rose-700/90">{exclusion.explanation}</p>
           </li>
         ))}
       </ul>

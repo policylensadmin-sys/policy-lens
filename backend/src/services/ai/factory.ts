@@ -18,6 +18,9 @@ import {
 // Real live LLM adapters (task 4.4).
 import { createAnthropicAIProvider } from './anthropic';
 import { createOpenAIAIProvider, createOpenAIEmbeddingProvider } from './openai';
+// Google Gemini adapters (AI + embeddings).
+import { createGeminiAIProvider, createGeminiEmbeddingProvider } from './gemini';
+import { FallbackAIProvider, FallbackEmbeddingProvider } from './fallback';
 // Live Google Vision OCR adapter (task 4.3).
 import { createGoogleVisionOCRProvider } from './googleVision';
 // Live OCR.space HTTP OCR adapter.
@@ -77,6 +80,21 @@ function resolveAi(
     return fallbackAi(requested, 'OPENAI_API_KEY is not set', logger);
   }
 
+  if (requested === 'gemini') {
+    if (env.geminiApiKey) {
+      // Gemini is the primary AI. Because Gemini's free tier is easily rate
+      // limited (429), wrap it with an automatic fallback to Groq/OpenAI (when
+      // a key is present) or the deterministic mock, so the product keeps
+      // working when Gemini is throttled — while still preferring Gemini.
+      const primary = createGeminiAIProvider();
+      const secondary = env.openaiApiKey ? createOpenAIAIProvider() : createMockAIProvider();
+      const secondaryName = env.openaiApiKey ? 'openai' : 'mock';
+      const provider = new FallbackAIProvider(primary, secondary, 'gemini', secondaryName, logger);
+      return { provider, resolution: mk(requested, requested, false) };
+    }
+    return fallbackAi(requested, 'GEMINI_API_KEY is not set', logger);
+  }
+
   // requested === 'mock'
   return { provider: createMockAIProvider(), resolution: mk('mock', 'mock', true) };
 }
@@ -108,6 +126,24 @@ function resolveEmbedding(
     }
     const reason = 'OPENAI_API_KEY is not set';
     logger.warn(`[embedding] "openai" selected but ${reason}; falling back to mock adapter.`);
+    return {
+      provider: createMockEmbeddingProvider(env.embeddingDim),
+      resolution: { requested, effective: 'mock', mocked: true, fallbackReason: reason },
+    };
+  }
+
+  if (requested === 'gemini') {
+    if (env.geminiApiKey) {
+      // Gemini embeddings, with an automatic per-batch fallback to the mock
+      // provider (same 1536-dim) so an upload never fails when Gemini is rate
+      // limited. Real Gemini vectors are used whenever the quota allows.
+      const primary = createGeminiEmbeddingProvider(env.embeddingDim);
+      const secondary = createMockEmbeddingProvider(env.embeddingDim);
+      const provider = new FallbackEmbeddingProvider(primary, secondary, 'gemini', 'mock', logger);
+      return { provider, resolution: mk(requested, requested, false) };
+    }
+    const reason = 'GEMINI_API_KEY is not set';
+    logger.warn(`[embedding] "gemini" selected but ${reason}; falling back to mock adapter.`);
     return {
       provider: createMockEmbeddingProvider(env.embeddingDim),
       resolution: { requested, effective: 'mock', mocked: true, fallbackReason: reason },
